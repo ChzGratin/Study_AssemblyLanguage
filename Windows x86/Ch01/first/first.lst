@@ -1,0 +1,102 @@
+     1                                  %include "asm_io.inc"
+     2                              <1> extern  read_int, print_int, print_string
+     3                              <1> extern read_char, print_char, print_nl
+     4                              <1> extern  sub_dump_regs, sub_dump_mem, sub_dump_math, sub_dump_stack
+     5                              <1> 
+     6                              <1> %macro dump_regs 1
+     7                              <1> push  dword %1
+     8                              <1> call  sub_dump_regs
+     9                              <1> %endmacro
+    10                              <1> 
+    11                              <1> %macro  dump_mem 3
+    12                              <1> push dword %1
+    13                              <1> push dword %2
+    14                              <1> push dword %3
+    15                              <1> call sub_dump_mem
+    16                              <1> %endmacro
+    17                              <1> 
+    18                              <1> %macro dump_math 1
+    19                              <1> push dword %1
+    20                              <1> call sub_dump_math
+    21                              <1> %endmacro
+    22                              <1> 
+    23                              <1> %macro  dump_stack 3
+    24                              <1> push dword %3
+    25                              <1>         push     dword %2
+    26                              <1> push dword %1
+    27                              <1>         call     sub_dump_stack
+    28                              <1> %endmacro
+     2                                  
+     3                                  segment .data
+     4                                  
+     5 00000000 456E7465722061206E-     prompt1 db "Enter a number: ", 0
+     5 00000009 756D6265723A2000   
+     6 00000011 456E74657220616E6F-     prompt2 db "Enter another number: ", 0
+     6 0000001A 74686572206E756D62-
+     6 00000023 65723A2000         
+     7 00000028 596F7520656E746572-     outmsg1 db "You entered ", 0
+     7 00000031 65642000           
+     8 00000035 20616E642000            outmsg2 db " and ", 0
+     9 0000003B 2C207468652073756D-     outmsg3 db ", the sum of these is ", 0
+     9 00000044 206F66207468657365-
+     9 0000004D 2069732000         
+    10                                  
+    11                                  segment .bss
+    12                                  
+    13 00000000 ????????                input1 resd 1
+    14 00000004 ????????                input2 resd 1
+    15                                  
+    16                                  segment .text
+    17                                  	global _main
+    18                                  _main:
+    19 00000000 C8000000                	enter 0,0				;entry point
+    20 00000004 60                      	pusha
+    21                                  	
+    22                                  	;get user input
+    23                                  	
+    24 00000005 B8[00000000]            	mov eax, prompt1
+    25 0000000A E8(00000000)            	call print_string
+    26                                  	
+    27 0000000F E8(00000000)            	call read_int
+    28 00000014 A3[00000000]            	mov [input1], eax
+    29                                  	
+    30 00000019 B8[11000000]            	mov eax, prompt2
+    31 0000001E E8(00000000)            	call print_string
+    32                                  	
+    33 00000023 E8(00000000)            	call read_int
+    34 00000028 A3[04000000]            	mov [input2], eax
+    35                                  	
+    36 0000002D A1[00000000]            	mov eax, [input1]
+    37 00000032 0305[04000000]          	add eax, [input2]
+    38 00000038 89C3                    	mov ebx, eax
+    39                                  	
+    40                                  	dump_regs 1
+     7 0000003A 6A01                <1> push dword %1
+     8 0000003C E8(00000000)        <1> call sub_dump_regs
+    41                                  	dump_mem 2, outmsg1, 1
+    12 00000041 6A02                <1> push dword %1
+    13 00000043 68[28000000]        <1> push dword %2
+    14 00000048 6A01                <1> push dword %3
+    15 0000004A E8(00000000)        <1> call sub_dump_mem
+    42                                  	
+    43                                  	;print message
+    44 0000004F B8[28000000]            	mov eax, outmsg1
+    45 00000054 E8(00000000)            	call print_string
+    46 00000059 A1[00000000]            	mov eax, [input1]
+    47 0000005E E8(00000000)            	call print_int
+    48                                  	
+    49 00000063 B8[35000000]            	mov eax, outmsg2
+    50 00000068 E8(00000000)            	call print_string
+    51 0000006D A1[04000000]            	mov eax, [input2]
+    52 00000072 E8(00000000)            	call print_int
+    53                                  	
+    54 00000077 B8[3B000000]            	mov eax, outmsg3
+    55 0000007C E8(00000000)            	call print_string
+    56 00000081 89D8                    	mov eax, ebx
+    57 00000083 E8(00000000)            	call print_int
+    58 00000088 E8(00000000)            	call print_nl
+    59                                  	
+    60 0000008D 61                      	popa
+    61 0000008E B800000000              	mov eax, 0
+    62 00000093 C9                      	leave
+    63 00000094 C3                      	ret

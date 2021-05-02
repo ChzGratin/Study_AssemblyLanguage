@@ -1,0 +1,67 @@
+#1. Preface
+RV)
+B - Byte
+W - Word = 2 byte
+D - Double word = 4 byte
+Q - Quad word = 8 byte
+T - 10(Ten) byte
+
+0) Operand:
+Register
+Memory (in address)
+immediate (const?)
+implied (ex: 1 is implied operand of INC.)
+
+i) Segment:
+segment .data		;initialized memory
+	db 0		;Byte
+	dw 1000		;Word
+	db 12h		;Byte, Hex
+	db 17o		;Byte, Oct
+	dd 1A92h	;DWord, Hex
+	db 'A'		;Byte, ASCII A(65)
+
+segment .bss		;un-initialized memory
+	resw 100	;REServed un-init. 100 Words
+
+segment .text		;code
+
+ii) Label:
+In assembly sources, label mean address of data. (=pointer)
+[label] means data at label.
+
+ex)
+segment .data
+	prompt db "Enter a number: ", 0		;prompt means address of "Enter a number: ".
+segment .bss
+	input resd 1				;input means address of a DWord.
+
+ex) print_string(char*);
+	mov eax, prompt		;mov eax, [prompt] (X)
+	call print_string
+
+ex) read_int(); *input = eax;
+	call read_int
+	mov [input], eax	;mov input, eax (X)
+
+iii) Entry Point:
+segment .text
+	global _main	;for win32
+_main:
+	enter 0, 0
+	pusha
+	
+	;(something to do)
+	
+	popa
+	mov eax, 0	;return 0
+	leave
+	ret
+
+iv) Directive:
+%include "asm_io.inc"	;cf) #include
+%define SIZE 100	;cf) #define SIZE 100
+symbol equ value	;cf) const T symbol = value; //T: data type
+
+v) Iterating Code:
+arr	times 100 db 0	;cf) char arr[100] = {0};

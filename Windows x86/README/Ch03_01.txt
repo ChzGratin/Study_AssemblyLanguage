@@ -1,0 +1,7 @@
+#3. Bitwise Operation
+
+<3.1~3.2 Shift & Boolean>
+i) Shift:
+Logic Shift 	 - SHL, SHR
+Arithmetic Shift - SAL, SAR
+Rotate		 - ROL, ROR

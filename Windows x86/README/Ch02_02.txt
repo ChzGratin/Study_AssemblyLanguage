@@ -1,0 +1,135 @@
+#2. Basics of Assembly Language
+<2.2 Control Flow>
+
+i) Compare:
+RV) ZF(Zero Flag), CF(Carry Flag),
+    SF(Sign Flag, MSB == 1),
+    OF(Overflow Flag, MSB == 1 && "two's-complement" overflow)
+
+CMP vleft, vright		;calculate vleft - vright
+				;vleft and vright are "unsigned".
+
+case 1) vleft - vright == 0:
+ZF = 1
+CF = 0
+
+case 2) vleft - vright > 0:
+ZF = 0
+CF = 0
+SF = OF
+
+case 3) vleft - vright < 0:
+ZF = 0
+CF = 1
+SF != OF
+
++alpha) test instruction:
+TEST vleft, vright		;calculate vleft & vright
+				;bitwise AND
+test v, v			;ZF == 1 => v == 0
+				;ZF == 0 && SF == 0 => v > 0
+				;ZF == 0 && SF == 1 => v < 0
+
+
+ii) Branch:
+RV) jump opcode structure = opcode(1 byte) + displacement(n byte)
+
+type 1) displacement:
+short - 1 byte (-128 ~ 127)
+near - 2 byte (-32768 ~ 32767)
+far - new offset address(IP/EIP, 2 byte) + new segment address(CS, 2 byte)
+
+type 2) unconditional:
+JMP label
+cf) goto label;
+
+type 3) conditional:
+ZF - JZ, JNZ	;Jump if (Not) Zero
+OF - JO, JNO
+SF - JS, JNS
+CF - JC, JNC
+PF - JP, JNP	;Parity
+
+type 4) (un)signed: Use these instructions after using CMP vleft, vright!
+Tip) signed - Greater/Less, unsigned - Above/Below
+
+signed   - JE, JNE, JL(<), JLE(<=), JG(>), JGE(>=)
+unsigned - JE, JNE, JB(<), JBE(<=), JA(>), JAE(>=)
++alpha) JNGE( !(vleft >= vright) ) == JL( vleft < vright )
+
+ex)
+//C-style Code
+if(EAX >= 5) //Suppose EAX is signed.
+    EBX = 1;
+else
+    EBX = 2;
+return 0;
+
+;Assembly Code
+002618E0  cmp         dword ptr [EAX],5  	;compare EAX and 5
+002618E4  jl          main+7Fh (02618EFh)  	;if EAX < 5, then goto else block
+002618E6  mov         dword ptr [EBX],1  	;if block
+002618ED  jmp         main+86h (02618F6h)  	;skip else block
+
+002618EF  mov         dword ptr [EBX],2  	;else block
+
+002618F6  xor         eax,eax  			;return 0
+
+
+iii) Loop:
+RV) ECX(Count register)
+
+LOOP label - decrease ECX and jump if ECX != 0
+		cf) for(; ECX != 0; ECX--)
+
+LOOPE, LOOPZ - decrease ECX and jump if ECX != 0 && ZF == 1
+		cf) for(; ECX != 0 && isEqual(...); ECX--)
+
+LOOPNE, LOOPNZ - decrease ECX and jump if ECX != 0 && ZF == 0
+		cf) for(; ECX != 0 && !isEqual(...); ECX--)
+
+Translating Control Statement to Assembly Code:
+1) if~else
+//C-style Code
+if(condition)
+    thenBlock:
+else
+    elseBlock:
+
+;Assembly Code
+	;condition (set flags)
+	jxx elseBlock		;goto else block
+	;thenBlock
+	;jmp endif
+elseBlock:
+	;elseBlock
+endif:
+
+2) while
+//C-style Code
+while(condition)
+{
+    //body of loop
+}
+
+;Assembly Code
+while:
+	;condition (set flags)
+	jxx endwhile		;break
+	;body of loop
+	jmp while
+endwhile:
+
+3) do~while
+//C-style Code
+do
+{
+    //body of loop
+}
+while(condition);
+
+;Assembly Code
+do:
+	;body of loop
+	;condition (set flags)
+	jxx do			;continue

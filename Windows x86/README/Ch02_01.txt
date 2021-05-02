@@ -1,0 +1,75 @@
+#2. Basics of Assembly Language
+
+<2.1 Handling Integers>
+i) Reducing Size of Integer Data:
+Deleted bits should be all '0's or '1's!
+
+ex) unsigned 16 bits -> unsigned 8 bits
+	mov ax, 0034h	;h = Hex
+	mov cl, al	;0x0034 -> 0x34 (GOOD)
+
+	mov ax, 0134h	;h = Hex
+	mov cl, al	;0x0134 -> 0x34 (BAD)
+
+ex) signed 16 bits -> signed 8 bits
+	mov ax, FFFFh	;0xFFFF = -1
+	mov cl, al	;0xFFFF -> 0xFF (GOOD)
+
+	mov ax, FF7Ah	;0xFF7A = -134
+	mov cl, al	;0xFF7A -> 0x7A = +122 (BAD)
+
+ii) Increasing Size of Integer Data:
+unsigned: new bits = all '0's
+signed: new bits = all '1's
+
+ex) unsigned 8 bits -> unsigned 16 bits
+	0xFF -> 0x00FF	;255
+
+ex) signed 8 bits -> signed 16 bits
+	0xFF -> 0xFFFF	;-1
+
+unsigned: MOVZX dst, src	;sizeof(dst) > sizeof(src), for 80386
+ex) movzx eax, ax		;32 bits <- 16 bits
+    movzx eax, al		;32 bits <- 8 bits
+    movzx ax, al		;16 bits <- 8 bits
+    movzx ebx, al		;32 bits <- 8 bits
+
+signed: MOVSX dst, src		;cf) MOVZX, for 80386
+CBW				;Convert Byte to Word, AL -> AX, for 8086
+CWD				;Convert Word to DWord, AX -> DX:AX, for 8086
+Note) 8086 doesn't have 32-bit Register!
+
+CWDE (NOT CWD!)			;Convert Word to DWord Extended, AX -> EAX, for 80386
+CDQ				;Convert DWord to QWord, EAX -> EDX:EAX, for 80386
+
+iii) Arithmetic Operation on Integers:
+ADD dst, src		;dst = dst + src
+SUB dst, src		;dst = dst - src
+
+MUL src			;AX(16) = AL(8) * src(8), src != (immediate value)
+IMUL src		;AX(16) = AL(8)*src(8), DX:AX(32) = AX(16)*src(16), EDX:EAX(64) = EAX(32)*src(32)
+IMUL dst, src		;dst(n) *= src(n, n/2)
+IMUL dst, src1, src2	;dst(n) = src1(n) * src2(n, n/2)
+
+DIV src			;src(8)  => AL(4) = Q, AH(4) = R
+			;src(16) => AX(8) = Q, DX(8) = R
+			;src(32) => EAX(16) = Q, EDX(16) = R
+IDIV src		;IDIV = DIV
+Note) P = D * Q + R, P = (AX, DX:AX, EDX:EAX), D = src
+Error) src == 0
+Error) Initialize DX/EDX before using DIV/IDIV! Use CBW/CWD/CDQ! (refer Binary Division)
+
+NEG src			;src *= -1, src != (immediate value)
+
+iv) Arithmetic Operation on Long Integers: more than 32 bits (DWord)
+ADC dst, src		;dst = dst + CF + src, AdD Carry
+SBB dst, src		;dst = dst - CF + src, SuB Borrow
+Note) CF = Carry Flag, CLC = CLear Carry
+
+ex) EDX:EAX + EBX:ECX
+	add eax, ecx	;add low 32 bits
+	adc edx, ebx	;add high 32 bits and CF
+
+ex) EDX:EAX - EBX:ECX
+	sub eax, ecx	;sub low 32 bits
+	sbb edx, ebx	;sub high 32 bits and CF
