@@ -1,0 +1,159 @@
+#3. Bitwise Operation
+
+<3.4 Changing Bit in C>
+i) Bitwise Operator:
+AND - &
+OR  - |
+XOR - ~
+SHL, SHR - <<, >> (unsigned)
+SAL, SAR - <<, >> (signed)
+
+ii) Permission in POSIX*:
+*Portable Operating System Interface for Computer Environment(이식 가능 운영체제 인터페이스)
+
+User  Group Others
+rwx  |rwx  |rwx
+
+Macro	Bit		Permission
+S_ISUID	100 000 000 000 SetUID
+S_ISGID 010 000 000 000 SetGID
+S_ISVTX 001 000 000 000 Sticky
+
+S_IRUSR 000 100 000 000 u+r
+S_IWUSR 000 010 000 000 u+w
+S_IXUSR 000 001 000 000 u+x
+
+S_IRGRP 000 000 100 000 g+r
+S_IWGRP 000 000 010 000 g+w
+S_IXGRP 000 000 001 000 g+x
+
+S_IROTH 000 000 000 100 o+r
+S_IWOTH 000 000 000 010 o+w
+S_IXOTH 000 000 000 001	o+x
+
+eg) chmod("foo", S_IRUSR | S_IWUSR | S_IRGRP); //$chmod u=rw,g=r,o-rwx foo
+
+<3.5 Big/Little-endian>
+Why?) In communications, Big/Little-endian should be seriously considered!
+eg) TCP/IP: refer to "UNIX Network Programming"
+htonl() - convert Host TO Network + Long int
+ntohl() - convert Network TO Host + Long int
+
+eg) dword 12345678h
+
+i) Big-endian: store MSBy* first
+Byte	|12  |34  |56  |78  |
+	|MSBy|    |    |LSBy|
+Address	|a   |a+1 |a+2 |a+3 |
+
+ii) Little-endian: store LSBy* first, x86
+Byte	|78  |56  |34  |12  |
+	|LSBy|    |    |MSBy|
+Address	|a   |a+1 |a+2 |a+3 |
+
+Caution) MSBy(Byte) != MSB(Bit)
+*MSBy and LSBy are NOT formal expressions!
+
++alpha) Inverting Endian:
+Big-endian	|12  |34  |56  |78  |
+Little-endian	|78  |56  |34  |12  |
+
+Reversing The Byte Order:
+32/64 bit - BSWAP EDX		;Byte SWAP, for 80486
+16    bit - XCHG  AH, AL	;eXCHanGe register/memory with register
+
+unsigned invert_endian(unsigned int x)
+{
+    unsigned int ans;
+    const unsigned char* px = (const unsigned char*) &x;
+    unsigned char* pa = (unsigned char*) &ans;
+
+    pa[0] = px[3];
+    pa[1] = px[2];
+    pa[2] = px[1];
+    pa[3] = px[0];
+
+    return ans;
+}
+
+<3.6 Counting 1s>
+i) 1st Method:
+int count_bits(unsigned int data)
+{
+    int cnt = 0;
+    while(data != 0)			             first one
+    {					                 ↓
+        data = data & (data - 1);	//data     = xxxx1000
+					//data - 1 = xxxx0111
+					//AND      = xxxx0000
+        cnt++;
+    }
+    return cnt;
+}
+
+ii) 2nd Method: Use lookup table (pre-calculated values).
+static unsigned char byte_cnt_bit[256];
+
+void init_lookup()
+{
+    for(int i=0; i<256; i++)
+    {
+        int cnt = 0;
+        while(data != 0)
+        {
+            data = data & (data - 1);	//1st Method
+            cnt++;
+        }
+        byte_cnt_bit[i] = cnt;
+    }
+    return cnt;
+}
+
+int count_bits(unsigned int data)
+{
+    const unsigned char* bytes = (unsigned char*) &data;
+    return byte_cnt_bit[bytes[0]] + byte_cnt_bit[bytes[1]]
+	 + byte_cnt_bit[bytes[2]] + byte_cnt_bit[bytes[3]];
+}
+
+iii) 3rd Method:
+data   = abab abab //a: even, b: odd
+
+step 1)
+55h    = 0101 0101 //mask
+
+data&55h      = 0b0b 0b0b
+data>>1       = 0aba baba | CF = b //SHR
+(data>>1)&55h = 0a0a 0a0a
+
+data&55h + ((data>>1)&55h) = cc|dd|cc|dd //c: even, d: odd
+
+step 2)
+33h    = 0011 0011 //mask
+
+data&33h      = 00dd 00dd
+data>>2       = 00cc ddcc | CF = dd //SHR
+(data>>2)&33h = 00cc 00cc
+
+data&33h + ((data>>2)&33h) = eeee|ffff //e: even, f: odd
+
+step 3)
+0Fh    = 0000 1111 //mask
+
+data&0Fh      = 0000 ffff
+data>>4       = 0000 eeee | CF = ffff //SHR
+(data>>4)&0Fh = 0000 eeee
+
+data&0Fh + ((data>>4)&0Fh) = ans
+
+int count_bits(unsigned int x)	//DWord, abab abab abab abab | abab abab abab abab
+{
+    static unsigned int mask[] = { 0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF, 0x0000FFFF };
+
+    int i, shift;
+    for(i=0, shift=1; i<5; i++, shift *= 2)
+    {
+        x = (x & mask[i]) + ( (x >> shift) & mask[i] );
+    }
+    return x;
+}

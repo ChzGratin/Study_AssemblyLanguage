@@ -2,6 +2,51 @@
 
 <3.1~3.2 Shift & Boolean>
 i) Shift:
-Logic Shift 	 - SHL, SHR
-Arithmetic Shift - SAL, SAR
+Logic Shift 	 - SHL, SHR (new bit = 0)
+Arithmetic Shift - SAL, SAR (SAL = SHL, SAR: new bit = prev. sign bit)
 Rotate		 - ROL, ROR
+
+CF(Carry Flag) = lost bit
+	       = MSB(SHL, SAL, ROL)
+	       = LSB(SHR, SAR, ROR)
+
+;Assembly Code
+	mov ax, 0C123h
+	shl ax, 2
+	mov cl, 3
+	shr ax, cl	;The second operand of shift operator must be a constant or CL.
+
++alpha) CLC = CLear Carry flag
+
+Tip) Shift operations can be used for multiplying/dividing 2^n.
+     unsigned - SHL, SHR
+       signed - SAL, SAR
+
+ii) Boolean:
+AND dst, v		;dst = dst & v
+ OR dst, v		;dst = dst | v
+XOR dst, v		;dst = dst ^ v
+NOT dst			;dst = ~dst
+
+TEST vl, vr		;ZF = (vl & vr) == 0
+			;cf) CMP
+
+iii) Tricks:
+eg 1) Turning on/off and negate i-th bit
+	mov ax, 0C123h	;16 bits
+	or  ax, 8	;turn on 3rd bit	(1000)
+	and ax, 0FFDFh	;turn off 5th bit	(1111 1111 1101 1111)
+	xor ax, 8000h	;negate 0th~15th bit	(1000 0000 0000 0000, A^0 = A, A^1 = ~A)
+	or  ax, 0F00h	;turn on nibble		(4 bits)
+
+eg 2) Counting 1(s)
+	mov bl, 0	;number of 1
+	mov ecx, 32	;32 bits, loop counter
+count_loop:
+	shl eax, 1	;CF = MSB
+	adc bl, 0	;AdD with Carry, bl = bl + CF + 0
+	loop count_loop
+
+eg 3) Zero Initialization
+	xor eax, eax	;eax = 0		(A^A = 0)
+			;faster than mov eax, 0

@@ -1,0 +1,73 @@
+#3. Bitwise Operation
+
+<3.3 Avoiding Conditional Branch>
+Why?) Speculative execution(추론적 실행) can NOT optimize conditional branch! (as of 2006):
+Suppose 5-stage pipeline:
+IF  - Instruction Fetch
+ID  - Instruction Decode / Register Fetch
+EX  - EXecute / effective address
+MEM - MEMory access
+WB  - Write-Back
+
+eg)
+;Assembly Code
+Conditional_Branch	;if(condition) excute Instruction_1~4
+			;else goto Instruction_5
+Instruction_1
+Instruction_2
+Instruction_3
+Instruction_4
+Instruction_5
+
+//Pipeline
+t=0  CUR
+CB   IF |ID |EX |MEM|WB
+
+t=1      CUR
+CB   IF |ID |EX |MEM|WB
+Ins1     IF |ID |EX |MEM|WB
+
+t=2          CUR
+CB   IF |ID |EX |MEM|WB
+Ins1     IF |ID |EX |MEM|WB
+Ins2         IF |ID |EX |MEM|WB
+
+t=3              CUR
+CB   IF |ID |EX |MEM|WB
+Ins1     IF |ID |EX |MEM|WB
+Ins2         IF |ID |EX |MEM|WB
+Ins3             IF |ID |EX |MEM|WB
+
+t=4                  CUR
+CB   IF |ID |EX |MEM|WB			;Now we know "condition == false".
+Ins1     IF |ID |EX |MEM|WB		;canceled
+Ins2         IF |ID |EX |MEM|WB		;canceled
+Ins3             IF |ID |EX |MEM|WB	;canceled
+Ins4                 IF |ID |EX |MEM|WB	;canceled
+
+t=5                      CUR		;t = 2 ~ 4: wasted time
+CB   IF |ID |EX |MEM|WB	|
+Ins5                    |IF |ID |EX |MEM|WB
+
+idea) Use SETcc: SET "1 byte operand" on Condition, Use these instructions after using CMP vleft, vright!
+CF	 - SETC(CF==1), SETNC(CF==0)
+signed   - SETE, SETNE, SETL(<), SETLE(<=), SETG(>), SETGE(>=)
+unsigned - SETE, SETNE, SETB(<), SETBE(<=), SETA(>), SETAE(>=)
+
+eg) int max(int* a, int* b):
+	mov eax, [a]
+	cmp eax, [b]
+	setg bl			;ebx = (a > b)? 1: 0
+	neg ebx			;ebx = (a > b)? 0xFFFFFFFF: 0
+				;Now we can use ebx as a bitmask!
+				;+alpha) We can use DEC instead of NEG.
+				;	 ebx = (a > b)? 0: 0xFFFFFFFF
+
+	mov ecx, ebx		;ecx = (a > b)? 0xFFFFFFFF: 0
+	and ecx, [a]		;ecx = (a > b)? [a]: 0
+
+	not ebx			;ebx = (a > b)? 0: 0xFFFFFFFF
+	and ebx, [b]		;ebx = (a > b)? 0: [b]
+
+	or ecx, ebx		;ecx = (a > b)? ([a] | 0): (0 | [b])
+				;ecx = max(a, b)
