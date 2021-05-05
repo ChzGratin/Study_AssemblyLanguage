@@ -1,7 +1,7 @@
 Reference:
 https://karfn84.tistory.com/entry/%EC%96%B4%EC%85%88%EB%B8%94%EB%A6%AC-%EB%A0%88%EC%A7%80%EC%8A%A4%ED%84%B0%EC%9D%98-%EA%B8%B0%EB%8A%A5
 
-#1. 80x86 CPU:
+80x86 CPU:
 8088,8086 -> 80286 -> 80386 -> 80486/Pentium/Pentium Pro -> Pentium MMX -> Pentium II
 
 i) 8086 CPU: 16-bit registers

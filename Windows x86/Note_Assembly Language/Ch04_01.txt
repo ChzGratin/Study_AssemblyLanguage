@@ -1,0 +1,45 @@
+#4. Subprogram
+
+<4.1 Indirect Addressing>
+RV) Instruction Format:
+	i) 0-address instruction
+	Opcode
+	eg) PUSHA, POPA
+
+	ii) 1-address instruction
+	Opcode + Operand1
+	eg) DIV src
+
+	iii) 2-address instruction
+	Opcode + Operand1 + Operand2
+	eg) MOV dst, src
+
+	iv) 3-address instruction
+	Opcode + Operand1 + Operand2 + Operand3
+	eg) ADD $t0, $s1, $s2	#MIPS, $t0 = $s1 + $s2
+
+RV) Addressing Mode:
+	Tip) Speed: Immediate > Direct > Calculate > Indirect
+
+	i) Immediate:
+	Opcode + Data
+	eg) PUSH dword 3
+
+	ii) Direct:
+	Opcode + Address(Main mem.)
+	eg) MOV eax, [input]
+
+	iii) Calculate:
+	Index Register Addressing:
+	Opcode + Index + Address	;Index + Address
+	eg) array
+
+	Relative Addressing:
+	Opcode + Address		;PC(Program Counter) + Address
+
+	Base Register Addressing:
+	Opcode + Address		;Base + Address
+
+	iv) Indirect:
+	Opcode + Address		;**Address == Data
+	cf) double pointer

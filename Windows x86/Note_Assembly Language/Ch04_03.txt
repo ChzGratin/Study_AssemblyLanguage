@@ -1,0 +1,160 @@
+#4. Subprogram
+
+<4.3 Stack>
+RV) Memory Structure:
+----------------0xFF...F
+      Stack			<- Parameters, Local Variables
+-------top------
+        ↓
+		
+        ↑
+----------------
+      Heap			<- Allocated Memory (malloc, calloc, realloc)
+----------------
+      Data			<- Global/Static Variables, String Literals
+----------------
+   Text (code)		<- Machine Code Instructions
+----------------0x0
+
+Stack - LIFO
+	  - PUSH, POP (4 byte, x86 Protected mode)
+	  - SS: Stack Segment -> Address of Stack
+	  - ESP: Extended Stack Pointer -> Address of Top Element
+	 => PUSH -> ++ESP
+		POP  -> --ESP
+
+eg)
+	push dword 1	;top = 1
+	push dword 2	;top = 2, 1
+	push dword 3	;top = 3, 2, 1
+	pop eax			;top = 2, 1			eax = 3
+	pop ebx			;top = 1			ebx = 2
+	pop ecx			;Stack is empty.	ecx = 1
+
+================================================================
+
+<4.4 Subprogram Using Stack: CALL, RET>
+CALL - CALL procedure
+	step 1) Save procedure linking information on the stack.
+	step 2) Branch to the called procedure specified using the target operand.
+	
+RET - RETurn from procedure
+	step 1) Pop return address located on the top of the stack.
+	step 2) Transfer program control to a return address.
+	
+Caution) Stack should be managed accurately!	
+eg)====sub_JMP.asm====
+_main:
+	call _sub
+	
+_sub:
+	;do something
+	;push eax		;RET will NOT work properly!
+	ret
+
+================================================================
+
+<4.5 C Calling Conventions(호출 규약)>
+RV) Calling Subprogram:
+	step 1) Push Parameters to Stack	;This makes it possible that printf() and scanf() have an arbitrary number of arguments.
+	step 2) Push Return Address
+	step 3) Branch to Subprogram
+	step 4) Run Subprogram				;Subprogram can also use stack.
+	step 5) Return
+
+IMPORTANT!! Rules for Stack:
+i) When subprogram begins after pushing parameters,
+	step 1) PUSH EBP		;prev EBP
+	step 2) MOV EBP, ESP
+	
+ii) Parameters are NOT popped by subprogram.
+	We can access to parameters by using EBP from (i).
+
+iii) At the end of subprogram,
+	step 1) POP EBP			;EBP = prev EBP
+	step 2) RET
+
+iv) After running subprogram, parameters should be popped.
+	Method 1) POP ECX					;Many compilers use this method.
+	Method 2) ADD ESP, (unsigned int)
+
+eg) common subprogram:
+//C-style code
+void func(int arg)
+{
+	//do something
+}
+
+;Assembly code
+_main:
+	push dword 1	;arg = 1
+	call func		;func(1)
+	pop ecx			;add esp, 4
+	
+func:
+	push ebp
+	mov ebp, esp
+	
+	;do something
+	
+	pop ebp
+	ret
+
+//Stack Frame
+----------------
+       arg			ESP + 8		EBP + 8
+----------------
+ return address		ESP + 4		EBP + 4
+----------------
+    prev EBP		ESP			EBP
+----------------
+
+----------------------------------------------------------------
+
+Local Variables on Stack:
+RV) local variables in C:
+	auto int a = 0;
+
+eg) common subprogram:
+//C-style code
+void func(int arg)
+{
+	int locVar;
+	locVar = 0;
+	
+	//do something
+}
+
+;Assembly code
+_main:
+	push dword 1	;arg = 1
+	call func		;func(1)
+	pop ecx			;add esp, 4
+	
+func:
+	push ebp
+	mov ebp, esp
+	
+	sub esp, 4				;int locVar (4 bytes)
+	mov dword[ebp + 4], 0	;locVar = 0
+	
+	;do something
+	
+	mov esp, ebp			;remove locVar
+	pop ebp
+	ret
+
+//Stack Frame
+----------------
+       arg			ESP + 12	EBP + 8
+----------------
+ return address		ESP + 8		EBP + 4
+----------------
+    prev EBP		ESP + 4		EBP
+----------------
+     locVar			ESP			EBP - 4
+----------------
+
+Allocating/Free Memories for Local Variables:
+ENTER LOCAL_BYTES, 0		;SUB ESP, LOCAL_BYTES
+LEAVE						;MOV ESP, EBP

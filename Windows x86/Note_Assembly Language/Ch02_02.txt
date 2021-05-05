@@ -1,6 +1,6 @@
 #2. Basics of Assembly Language
-<2.2 Control Flow>
 
+<2.2 Control Flow>
 i) Compare:
 RV) ZF(Zero Flag), CF(Carry Flag),
     SF(Sign Flag, MSB == 1),
