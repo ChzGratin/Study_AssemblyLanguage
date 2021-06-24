@@ -1,0 +1,53 @@
+#4. Subprogram
+
+<4.8 Reentrant Subprogram(재진입 서브프로그램) and Recursive Subprogram>
+Advantages of Using Reentrant Subprogram:
+	i)  recursive call
+	ii) thread-safety
+
+Conditions for Reentrant Subprogram:
+	i)   Reentrant code may not hold any static or global non-constant data.
+	     (Use ONLY local variables in stack!)
+		 
+	ii)  Reentrant code may not modify itself.
+	     (Do NOT modify .text(code) segment!)
+		 
+	iii) Reentrant code may not call non-reentrant computer programs or routines.
+
+Caution) Reentrant != Recursive
+
+eg) recursive factorial:
+segment .text
+	global _fact		;unsigned __cdecl fact(unsigned n)
+						;(Caller cleans arguments from stack.)
+_fact:
+	enter 0, 0
+	
+	mov eax, [ebp+8]	;fact(n) is called. => EAX == n
+	
+	cmp eax, 1			;if(EAX <= 1) { return 1; }
+	jbe term_cond
+	
+	dec eax				;EAX = n-1
+	
+	push eax			;call fact(n-1)
+	call _fact
+	pop ecx				;EAX == ECX == fact(n-1)
+	
+	imul eax, [ebp+8]		;EAX = f(n-1) * n
+	
+term_cond:
+	mov eax, 1			;return 1
+	
+end_fact:				;return, EAX == fact(n)
+	leave
+	ret
+
+Scope Rules in C:
+	i)   automatic - stack (default scope)
+	ii)  static    - data, bss
+	iii) global    - data, bss
+	iv)  register  - register
+	v)   volatile  - prevent a compiler from optimizing
+	
+	Caution) global != global static

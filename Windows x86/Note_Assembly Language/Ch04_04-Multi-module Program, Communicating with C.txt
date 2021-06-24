@@ -1,0 +1,111 @@
+#4. Subprogram
+
+<4.6 Multi-module Program>
+More than one object file!
+
+extern and global keyword:
+case 1)
+Module | A.asm	B.asm
+Code   | 		_sub:
+=> We can NOT use _sub in A.
+
+case 2)
+Module | A.asm			B.asm
+Code   | extern _sub	global _sub:
+=> Now we can use _sub in A.
+
+eg)
+;====main.asm====
+segment .text
+	global _asm_main
+	extern get_int, print_sum
+
+;====sub.asm====
+segment .text
+	global get_int, print_sum
+
+get_int:
+	;do something
+
+print_sum:
+	;do something
+	
+================================================================
+
+<4.7 Communicating with C>
+~More Rules for C Calling Conventions~
+
+i) Subroutines can NOT change values of following registers.
+EBX, ESI, EDI, EBP, CS, DS, SS, ES
+
+EBX, ESI, EDI       - should NEVER be changed! (register variable)
+EBP, CS, DS, SS, ES - should be restored with original values when subroutine returns. Use stack.
+
+ii) Label of function should start with one '_'(underscore).
+eg) _main, _printf, _myFunc
+
+iii) Arguments are pushed to stack back to front.
+eg)
+//C
+printf("< %d , %d >\n", x, y);
+     //front <--------- back
+
+//ASM
+	push dword [y]
+	push dword [x]
+	push dword format
+	call _printf
+	add esp, 12
+
++alpha) Indefinite number of arguments in C:
+use stdarg.h
+
+iv) Calculating address of local variable stored in stack:
+//ASM
+	LEA EAX, [EBP - 8]		;MOV EAX, EBP - 8 is UNAVAILABLE! (EBP - 8 needs to be calculated!)
+							;same with MOV EAX, EBP
+							;		   SUB EAX, 8
+
+v) Return value is stored in EAX:
+//integer (char, int, enum, pointer, etc.)
+	short  integer - extended to 32 bits -> stored in EAX
+	32-bit integer - stored in EAX
+	64-bit integer - stored in EDX:EAX
+
+//floating-point number (float, double, long double)
+	stored in ST0 (refer to Ch06)
+
+vi) Other calling conventions:
+Tip) Caller(호출자), Callee(피호출자):
+int main()
+{
+	myFunc(myArgs); //caller: _main, callee: _myFunc
+}
+
+__cdecl (C declaration)
+	Caller cleans arguments from stack.
+
+__stdcall
+	Callee cleans arguments from stack.
+
+__fastcall (Microsoft)
+	Callee cleans arguments from stack.
+	If possible, store first two arguments in ECX and EDX.
+	
+	eg) ans = myFunc(a1, a2, a3, ... , an);
+	
+	PUSH from an to a1		;back to front
+	MOV EDX, a2
+	MOV ECX, a1
+	CALL _myFunc
+	MOV [ans], eax
+
+__vectorcall (Microsoft)
+	Store vector-type arguments(float, double, __m128, __m256) in registers.
+
+__thiscall (C++ non-static member function)
+	In GCC, __thiscall == __cdecl (this pointer is pushed into stack last.)
+	
+	eg)
+	myClass A;
+	A.setName("Alice");		//setName(&A, "Alice");

@@ -1,0 +1,54 @@
+#6. Floating Point
+
+<6.1 Floating Point Expression>
+RV) Scientific Notation:
+(Sign) * (Mantissa) * 10^(Exponent)
+
+i) Single-precision Floating-point Format (IEEE 754):
+s * 1.fff ffff ffff ffff ffff ffff... * 2^(eeee eeee)	s: Sign, f: Fraction(가수), e: Exponent
+
+will be stored as...
+
+SEEE EEEE Efff ffff ffff ffff ffff ffff
+(1+8+23 = 32 bits)
+
+Tip)
+s = +1 => S = 0
+s = -1 => S = 1
+EEE EEEE E = eeee eeee + 0x7F (bias, 127)
+1.fff... (hidden one representation)
+
+Special Values of f and e:
+Zero         - e =  0, f  = 0 (There are +0 and -0)
+Denormalized - e =  0, f != 0 (Too small number)
+Infinity     - e = FF, f  = 0 (Overflow, Division by Zero)
+Not a Number - e = FF, f != 0 (Undefined, Wrong Operation: sqrt(-1), Inf + Inf, etc.)
+
+
+ii) Double-precision Floating-point Format (IEEE 754):
+s * 1.ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff * 2^(eee eeee eeee)
+
+will be stored as...
+
+SEEE EEEE EEEE ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff ffff
+(1+11+52 = 64 bits)
+
+Tip)
+EEE EEEE EEEE = eee eeee eeee + 0x3FF (bias, 1023)
+
+
+<6.2 Floating-point Arithmatic Operations>
+IMPORTANT!!)
+Results of floating-point arithmatic operations are NOT precise!
+eg)
+if ( x == 0 )			//Bad
+if ( fabs(x) < EPS )	//Good
+						//fabs: Floating-point ABSolute
+						//EPS : machine EPSilon (an upper bound on the relative Error due to rounding in floating point arithmetic)
+
+i) Addition / Subtraction:
+Represent operands with same exponent. -> Add or subtract mantissas.
+
+ii) Multiplication / Division:
+Mul. - Multiply mantissas and add      exponents.
+Div. - Divide   mantissas and subtract exponents.

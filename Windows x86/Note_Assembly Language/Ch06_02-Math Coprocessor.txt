@@ -1,0 +1,135 @@
+#6. Floating Point
+
+<6.3 Math Coprocessor(수치 보조프로세서)>
+
+Registers:
+Floating Point Registers - ST0, ST1, ... , ST7 (80 bits * 8, stack: top = ST0)
+Condition Code Flags     - C0, C1, C2, C3      (used for comparing)
+
+RV) Flags Register:
+   x86 EFLAGS    x87 FPU Status Word    x87 FPU Control Word
+ 0     CF                IE                      IM
+ 1      1                DE                      DM
+ 2     PF                ZE                      ZM
+ 3  Reserved             OE                      OM
+ 4     AF                UE                      UM
+ 5  Reserved             PE                      PM
+ 6     ZF                SF                   Reserved
+ 7     SF                ES                   Reserved
+ 8     TF                C0                      PC
+ 9     IF                C1                      PC
+10     DF                C2                      RC
+11     OF               TOP                      RC
+12    IOPL              TOP                       X
+13    IOPL              TOP                   Reserved
+14     NT                C3                   Reserved
+15  Reserved              B                   Reserved
+16     RF
+17     VM
+18     AC
+19    VIF
+20    VIP
+21     ID
+22  Reserved
+..     ..
+31  Reserved
+
+Instructions:
+Tip) mnemonic: F-: Floating point, I: Integer, P: Pop
+
+i) LoaD/STore:
+FLD  src - ST0 = src; //float, double, STn
+FILD src - ST0 = src; //W, D, Q
+
+FLD1     - ST0 = 1;
+FLDZ     - ST0 = 0;
+
+FST   dst - dst = ST0;
+FSTP  dst - dst = ST0; pop(ST0);
+FIST  dst - dst = (int) ST0;			//Use FSTCW, FLDCW to set Control Word.
+FISTP dst - dst = (int) ST0; pop(ST0);
+
+FXCH  STn - swap(ST0, STn); //n = 1, 2, ... , 7
+FFREE STn - mark STn as empty
+
+ii) ADD/MUL:
+FADD  src      - ST0 += src;
+FADD  dst, STn - dst += ST0;
+FADDP dst      - dst += ST0; pop(ST0);
+FADDP dst, ST0 - dst += ST0; pop(ST0);
+FIADD src      - ST0 += (int) src;
+----------------------------------------------------------------
+FMUL  src      - ST0 *= src;
+FMUL  dst, ST0 - dst *= ST0;
+FMULP dst      - dst *= ST0; pop(ST0);
+FMULP dst, ST0 - dst *= ST0; pop(ST0);
+FIMUL src      - ST0 *= (float) src;
+
+iii) SUB/DIV:
+Tip) mnemonic: R: Reverse
+
+FSUB  src      - ST0 -= src;
+FSUB  dst, ST0 - dst -= src;
+FSUBR src      - ST0  = src - ST0;
+FSUBR dst, ST0 - dst  = ST0 - dst;
+
+FSUBP dst       - dst -= ST0;       pop(ST0);
+FSUBP dst, ST0  - dst -= ST0;       pop(ST0);
+FSUBRP dst      - dst  = ST0 - dst; pop(ST0);
+FSUBRP dst, ST0 - dst  = ST0 - dst; pop(ST0);
+
+FISUB  src - ST0 -= (float) src;
+FISUBR src - ST0  = (float) src - ST0;
+----------------------------------------------------------------
+FDIV  src      - ST0 /= src;
+FDIV  dst, ST0 - dst /= ST0;
+FDIVR src      - ST0  = src / ST0;
+FDIVR dst, ST0 - dst  = ST0 / dst;
+
+FDIVP  dst      - dst /= ST0;       pop(ST0);
+FDIVP  dst, ST0 - dst /= ST0;       pop(ST0);
+FDIVRP dst      - dst  = ST0 / dst; pop(ST0);
+FDIVRP dst, ST0 - dst  = ST0 / dst; pop(ST0);
+
+FIDIV  src - ST0 /= (float) src;
+FIDIVR src - ST0  = (float) src / ST0;
+
+iv) COMpare: change condition code flags (C0, C1, C2, C3)
+	iv-i) EFLAGS will NOT be changed:
+	FCOM   src - compare(ST0, src);
+	FCOMP  src - compare(ST0, src); pop(ST0);
+	FCOMPP     - compare(ST0, ST1); pop(ST0); pop(ST0);
+
+	FICOM  src - compare( ST0, (float)src );  pop(ST0);
+	FICOMP src - compare( ST0, (float)src );  pop(ST0);
+	
+	FTST       - compare( ST0, 0 );
+	
+	iv-ii) EFLAGS will be changed: for IA-32 Architecture in the P6 family processors
+	FCOMI  src - compare( ST0, src );
+	FCOMIP src - compare( ST0, src ); pop(ST0);
+
+Note) FCOM/FCOMP/FCOMPP Results:
+          C3 C2 C0
+ST0 > src  0  0  0
+ST0 < src  0  0  1
+ST0 = src  1  0  0
+Unordered  1  1  1
+
+Note) FTST Results:
+          C3 C2 C0
+ST0 > 0.0  0  0  0
+ST0 < 0.0  0  0  1
+ST0 = 0.0  1  0  0
+Unordered  1  1  1
+
++alpha) Handling Status Registers:
+FSTSW dst - dst = (FPU Status Word); //dst is 2 bytes mem. or AX.
+SAHF      - EFLAGS(SF:ZF:0:AF:0:PF:1:CF) = AH;
+LAHF      - AH = EFLAGS(SF:ZF:0:AF:0:PF:1:CF);
+
+v) misc.:
+FCHS   - ST0 = -ST0;
+FABS   - ST0 = |ST0|;
+FSQRT  - ST0 = sqrt(ST0);
+FSCALE - ST0 = ST0 * 2^floor(ST1);
